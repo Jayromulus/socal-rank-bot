@@ -1,0 +1,3 @@
+when using sequelize-cli commands, use 
+`npx sequelize-cli <comman>`
+mac isnt letting me install globally or use it as a dev dependancy
