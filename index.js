@@ -39,6 +39,7 @@ const { Op } = require('sequelize');
 const e = require('express');
 
 let index = 0;
+let playerRunsGeneral;
 
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
@@ -72,10 +73,14 @@ client.on('messageCreate', async (message) => {
     const args = message.content.slice(process.env.PREFIX.length).trim().split(/ +/g);
     const command = args.shift().toLowerCase();
     let playerInfo;
-    if (command === 'ping') {
-      message.channel.send('Pong.');
-    }
+    // if (command === 'ping') {
+    //   message.channel.send('Pong.');
+    // }
     if (command === 'rank') {
+      playerRunsGeneral = await models.Team.findAll({ where: { member: { [Op.iLike]: `%${args[0]}%` } } })
+      
+      // console.log('playerRuns',playerRunsGeneral, args[0]);
+
       switch (args.length) {
         case 0:
           message.channel.send('No player input');
@@ -85,7 +90,7 @@ client.on('messageCreate', async (message) => {
           playerInfo = await models.Rank.findAll({ where: { player: { [Op.iLike]: `%${args[0]}%` } }, order: [['createdAt', 'DESC']] })
           // console.log(playerInfo);
           if (playerInfo[0]) {
-            const exampleEmbed = newEmbed(playerInfo[index], playerInfo.length)
+            const exampleEmbed = newEmbed(playerInfo[index], findDamage(playerRunsGeneral, playerInfo[index].month), playerInfo.length)
 
             // const msg = await message.channel.send({ embeds: [exampleEmbed] })
             const backId = 'back'
@@ -118,13 +123,13 @@ client.on('messageCreate', async (message) => {
               filter: ({ user }) => true
             })
 
-            let currentIndex = 0
+            let currentIndex = index
             collector.on('collect', async interaction => {
               // Increase/decrease index
               interaction.customId === backId ? (currentIndex -= 1) : (currentIndex += 1)
               // Respond to interaction by updating message with new embed
               await interaction.update({
-                embeds: [newEmbed(playerInfo[currentIndex], playerInfo.length)],
+                embeds: [newEmbed(playerInfo[currentIndex], findDamage(playerRunsGeneral, playerInfo[currentIndex].month), playerInfo.length)],
                 components: [
                   new MessageActionRow({
                     components: [
@@ -143,7 +148,7 @@ client.on('messageCreate', async (message) => {
           // find rank of player in year
           playerInfo = await models.Rank.findAll({ where: { player: { [Op.iLike]: `%${args[0]}%` }, year: args[1] }, order: [['createdAt', 'DESC']] })
           if (playerInfo[0]) {
-            const exampleEmbed = newEmbed(playerInfo[index], playerInfo.length)
+            const exampleEmbed = newEmbed(playerInfo[index],findDamage(playerRunsGeneral, playerInfo[index].month), playerInfo.length)
 
 
             const backId = 'back'
@@ -176,13 +181,13 @@ client.on('messageCreate', async (message) => {
               filter: ({ user }) => true
             })
 
-            let currentIndex = 0
+            let currentIndex = index
             collector.on('collect', async interaction => {
               // Increase/decrease index
               interaction.customId === backId ? (currentIndex -= 1) : (currentIndex += 1)
               // Respond to interaction by updating message with new embed
               await interaction.update({
-                embeds: [newEmbed(playerInfo[currentIndex], playerInfo.length)],
+                embeds: [newEmbed(playerInfo[currentIndex],findDamage(playerRunsGeneral, playerInfo[currentIndex].month), playerInfo.length)],
                 components: [
                   new MessageActionRow({
                     components: [
@@ -204,7 +209,7 @@ client.on('messageCreate', async (message) => {
           // console.log(args);
           playerInfo = await models.Rank.findOne({ where: { player: { [Op.iLike]: `%${args[0]}%` }, month: { [Op.iLike]: `%${args[1]}%` }, year: args[2] } })
           // console.log(playerInfo);
-          const exampleEmbed = newEmbed(playerInfo, 1)
+          const exampleEmbed = newEmbed(playerInfo,findDamage(playerRunsGeneral, playerInfo.month), 1)
           const msg = await message.channel.send({ embeds: [exampleEmbed] })
           break;
         default:
@@ -212,6 +217,8 @@ client.on('messageCreate', async (message) => {
       }
     }
     if (command === 'runs') {
+// REWORK THIS TO HAVE NO ARGUMENTS FOR CURRENT DAY RUNS AND A MONTH YEAR TO GET SPECIFIC CB RUNS (Op.iLike %month% AND Op.includes? year)
+
       // const TODAY_START = new Date().setHours(0, 0, 0, 0);
       // const NOW = new Date().setHours(23.59, 59, 999);
       const NOW = new Date()
@@ -310,7 +317,7 @@ client.on('messageCreate', async (message) => {
   }
 })
 
-function newEmbed(info, length) {
+function newEmbed(info, damage, length) {
   return new Discord.MessageEmbed()
     .setColor('#0099ff')
     .setTitle(info.player)
@@ -324,11 +331,14 @@ function newEmbed(info, length) {
       { name: 'CB', value: `${info.month} ${info.year}`, inline: true },
       { name: 'Rank', value: `${info.rank}`, inline: true },
       { name: 'Score', value: `${info.score}`, inline: true },
+      { name: '\u200B', value: `\u200B`, inline: true },
+      { name: '\u200B', value: `\u200B`, inline: true },
+      { name: 'Damage', value: `${damage !== 0 ? damage : '*unavailable*'}`, inline: true }
     )
     // .addField('Inline field title', 'Some value here', true)
     // .setImage('https://i.imgur.com/AfFp7pu.png')
     .setTimestamp()
-    .setFooter('Use the emotes to filter the results');
+    .setFooter('Use the buttons to scroll the results');
 }
 
 function runEmbed(totals, start) {
@@ -356,6 +366,19 @@ function runEmbed(totals, start) {
     // .setImage('https://i.imgur.com/AfFp7pu.png')
     .setTimestamp()
   // .setFooter('Use the emoted to filter the results');
+}
+
+function findDamage(runs, month) {
+  // console.log(runs[runs.length-1].cb.includes(month), runs[0].damage);
+  // console.log('Damage:',runs.filter(r => r.cb.includes(month)).reduce((a,b) => {a?.damage + b?.damage}, 0));
+  let temp = runs.filter(r => {console.log(r.cb.includes(month)); return r.cb.includes(month)})
+  // console.log('runs',runs.length);
+  // console.log('temp',temp.length);
+  // console.log(temp[0]?.damage);
+  // console.log(temp[0]);
+  let test = temp.reduce((a,b) => a + b.damage, 0)
+  // console.log(test);
+  return test
 }
 
 // client.on('messageReactionAdd', async (react_orig, user) => {
