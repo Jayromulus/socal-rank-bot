@@ -72,7 +72,7 @@ client.on('messageCreate', async (message) => {
     const command = args.shift().toLowerCase();
     let playerInfo;
     if (command === 'rank') {
-      playerRunsGeneral = await models.Team.findAll({ where: { member: { [Op.iLike]: `%${args[0]}%` } } })
+      // playerRunsGeneral = await models.Team.findAll({ where: { member: { [Op.iLike]: `%${args[0]}%` } } })
 
 
       switch (args.length) {
@@ -83,7 +83,7 @@ client.on('messageCreate', async (message) => {
           try {
             playerInfo = await models.Rank.findAll({ where: { player: { [Op.iLike]: `%${args[0]}%` } }, order: [['createdAt', 'DESC']] })
             if (playerInfo[0]) {
-              const exampleEmbed = newEmbed(playerInfo[index], findDamage(playerRunsGeneral, playerInfo[index].month), playerInfo.length)
+              const exampleEmbed = newEmbed(playerInfo[index], 'unavailable', playerInfo.length)
 
               const backId = 'back'
               const forwardId = 'forward'
@@ -121,7 +121,7 @@ client.on('messageCreate', async (message) => {
                 interaction.customId === backId ? (currentIndex -= 1) : (currentIndex += 1)
                 // Respond to interaction by updating message with new embed
                 await interaction.update({
-                  embeds: [newEmbed(playerInfo[currentIndex], findDamage(playerRunsGeneral, playerInfo[currentIndex].month), playerInfo.length)],
+                  embeds: [newEmbed(playerInfo[currentIndex], 'unavailable', playerInfo.length)],
                   components: [
                     new MessageActionRow({
                       components: [
@@ -145,7 +145,7 @@ client.on('messageCreate', async (message) => {
             // find rank of player in year
             playerInfo = await models.Rank.findAll({ where: { player: { [Op.iLike]: `%${args[0]}%` }, year: args[1] }, order: [['createdAt', 'DESC']] })
             if (playerInfo[0]) {
-              const exampleEmbed = newEmbed(playerInfo[index], findDamage(playerRunsGeneral, playerInfo[index].month), playerInfo.length)
+              const exampleEmbed = newEmbed(playerInfo[index], 'unavailable', playerInfo.length)
 
 
               const backId = 'back'
@@ -184,7 +184,7 @@ client.on('messageCreate', async (message) => {
                 interaction.customId === backId ? (currentIndex -= 1) : (currentIndex += 1)
                 // Respond to interaction by updating message with new embed
                 await interaction.update({
-                  embeds: [newEmbed(playerInfo[currentIndex], findDamage(playerRunsGeneral, playerInfo[currentIndex].month), playerInfo.length)],
+                  embeds: [newEmbed(playerInfo[currentIndex], 'unavailable', playerInfo.length)],
                   components: [
                     new MessageActionRow({
                       components: [
@@ -205,7 +205,7 @@ client.on('messageCreate', async (message) => {
         case 3:
           try {
             playerInfo = await models.Rank.findOne({ where: { player: { [Op.iLike]: `%${args[0]}%` }, month: { [Op.iLike]: `%${args[1]}%` }, year: args[2] } })
-            const exampleEmbed = newEmbed(playerInfo, findDamage(playerRunsGeneral, playerInfo.month), 1)
+            const exampleEmbed = newEmbed(playerInfo, 'unvailable', 1)
             const msg = await message.channel.send({ embeds: [exampleEmbed] })
           } catch (e) {
             console.log('error at 225:', e);
