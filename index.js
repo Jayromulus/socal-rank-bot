@@ -215,96 +215,96 @@ client.on('messageCreate', async (message) => {
           message.channel.send('Invalid input. Type `!help` for help on usage.');
       }
     }
-    if (command === 'runs') {
-      // REWORK THIS TO HAVE NO ARGUMENTS FOR CURRENT DAY RUNS AND A MONTH YEAR TO GET SPECIFIC CB RUNS (Op.iLike %month% AND Op.includes? year)
+    // if (command === 'runs') {
+    //   // REWORK THIS TO HAVE NO ARGUMENTS FOR CURRENT DAY RUNS AND A MONTH YEAR TO GET SPECIFIC CB RUNS (Op.iLike %month% AND Op.includes? year)
 
-      // const TODAY_START = new Date().setHours(0, 0, 0, 0);
-      // const NOW = new Date().setHours(23.59, 59, 999);
-      const NOW = new Date()
-      const TODAY_START = new Date(NOW)
+    //   // const TODAY_START = new Date().setHours(0, 0, 0, 0);
+    //   // const NOW = new Date().setHours(23.59, 59, 999);
+    //   const NOW = new Date()
+    //   const TODAY_START = new Date(NOW)
 
-      TODAY_START.setDate(TODAY_START.getDate() - 1)
+    //   TODAY_START.setDate(TODAY_START.getDate() - 1)
 
-      NOW.setHours(9, 0, 0, 0)
-      TODAY_START.setHours(8.59, 59, 59)
-      let memberRuns = Array.from({ length: guild_members.length }, () => 0);
+    //   NOW.setHours(9, 0, 0, 0)
+    //   TODAY_START.setHours(8.59, 59, 59)
+    //   let memberRuns = Array.from({ length: guild_members.length }, () => 0);
 
-      const daily = await models.Team.findAll({
-        where: {
-          createdAt: {
-            [Op.gte]: TODAY_START,
-            [Op.lte]: NOW
-          },
-        },
-      });
+    //   const daily = await models.Team.findAll({
+    //     where: {
+    //       createdAt: {
+    //         [Op.gte]: TODAY_START,
+    //         [Op.lte]: NOW
+    //       },
+    //     },
+    //   });
 
-      daily.forEach(run => {
-        if (!run.overkill) {
-          const index = guild_members.findIndex(el => el === run.member);
-          // console.log('run:', index);
-          memberRuns[index]++;
-        }
-      })
+    //   daily.forEach(run => {
+    //     if (!run.overkill) {
+    //       const index = guild_members.findIndex(el => el === run.member);
+    //       // console.log('run:', index);
+    //       memberRuns[index]++;
+    //     }
+    //   })
 
-      let runTotals = guild_members.map((member, i) => {
-        const index = guild_members.findIndex(el => el === member);
-        return ({ name: member, value: `${memberRuns[index]}/3`, inline: true });
-      })
+    //   let runTotals = guild_members.map((member, i) => {
+    //     const index = guild_members.findIndex(el => el === member);
+    //     return ({ name: member, value: `${memberRuns[index]}/3`, inline: true });
+    //   })
 
-      let runs = runEmbed(runTotals, 0);
+    //   let runs = runEmbed(runTotals, 0);
 
-      const backId = 'back'
-      const forwardId = 'forward'
-      const backButton = new MessageButton({
-        style: 'SECONDARY',
-        label: 'Back',
-        emoji: '⬅️',
-        customId: backId
-      })
-      const forwardButton = new MessageButton({
-        style: 'SECONDARY',
-        label: 'Forward',
-        emoji: '➡️',
-        customId: forwardId
-      })
+    //   const backId = 'back'
+    //   const forwardId = 'forward'
+    //   const backButton = new MessageButton({
+    //     style: 'SECONDARY',
+    //     label: 'Back',
+    //     emoji: '⬅️',
+    //     customId: backId
+    //   })
+    //   const forwardButton = new MessageButton({
+    //     style: 'SECONDARY',
+    //     label: 'Forward',
+    //     emoji: '➡️',
+    //     customId: forwardId
+    //   })
 
 
-      const canFitOnOnePage = guild_members.length <= 15
-      const embedMessage = await message.channel.send({
-        embeds: [runs],
-        components: canFitOnOnePage
-          ? []
-          : [new MessageActionRow({ components: [forwardButton] })]
-      })
-      // Exit if there is only one page of guilds (no need for all of this)
-      if (canFitOnOnePage) return
+    //   const canFitOnOnePage = guild_members.length <= 15
+    //   const embedMessage = await message.channel.send({
+    //     embeds: [runs],
+    //     components: canFitOnOnePage
+    //       ? []
+    //       : [new MessageActionRow({ components: [forwardButton] })]
+    //   })
+    //   // Exit if there is only one page of guilds (no need for all of this)
+    //   if (canFitOnOnePage) return
 
-      // Collect button interactions (when a user clicks a button),
-      // but only when the button as clicked by the original message author
-      const collector = embedMessage.createMessageComponentCollector({
-        filter: ({ user }) => true
-      })
+    //   // Collect button interactions (when a user clicks a button),
+    //   // but only when the button as clicked by the original message author
+    //   const collector = embedMessage.createMessageComponentCollector({
+    //     filter: ({ user }) => true
+    //   })
 
-      let currentIndex = 0
-      collector.on('collect', async interaction => {
-        // Increase/decrease index
-        interaction.customId === backId ? (currentIndex -= 15) : (currentIndex += 15)
-        // Respond to interaction by updating message with new embed
-        await interaction.update({
-          embeds: [runEmbed(runTotals, currentIndex)],
-          components: [
-            new MessageActionRow({
-              components: [
-                // back button if it isn't the start
-                ...(currentIndex ? [backButton] : []),
-                // forward button if it isn't the end
-                ...(currentIndex + 15 < guild_members.length ? [forwardButton] : [])
-              ]
-            })
-          ]
-        })
-      })
-    }
+    //   let currentIndex = 0
+    //   collector.on('collect', async interaction => {
+    //     // Increase/decrease index
+    //     interaction.customId === backId ? (currentIndex -= 15) : (currentIndex += 15)
+    //     // Respond to interaction by updating message with new embed
+    //     await interaction.update({
+    //       embeds: [runEmbed(runTotals, currentIndex)],
+    //       components: [
+    //         new MessageActionRow({
+    //           components: [
+    //             // back button if it isn't the start
+    //             ...(currentIndex ? [backButton] : []),
+    //             // forward button if it isn't the end
+    //             ...(currentIndex + 15 < guild_members.length ? [forwardButton] : [])
+    //           ]
+    //         })
+    //       ]
+    //     })
+    //   })
+    // }
 
     // rework the channel check to only allow rank in certain channels but it will 
     // make a command that will give you the team that does the most damage against a specific boss on a given lap for cb
