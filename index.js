@@ -73,8 +73,6 @@ client.on('messageCreate', async (message) => {
     let playerInfo;
     if (command === 'rank') {
       // playerRunsGeneral = await models.Team.findAll({ where: { member: { [Op.iLike]: `%${args[0]}%` } } })
-
-
       switch (args.length) {
         case 0:
           message.channel.send('No player input');
@@ -215,6 +213,174 @@ client.on('messageCreate', async (message) => {
           message.channel.send('Invalid input. Type `!help` for help on usage.');
       }
     }
+    if (command === 'ranks') {
+      switch (args.length) {
+        case 0:
+          message.channel.send('No time period input');
+          break;
+        case 1:
+          try {
+            // find ranks within a certain year after checking that the year is in a number format
+            let year = parseInt(args[0]);
+            if (isNaN(year))
+              throw 'insert a proper number';
+            let ranks = await models.Rank.findAll({ where: { year: year } , order: [ ['createdAt', 'desc'], ['rank', 'asc'] ] });
+            // console.log(ranks.length);
+            let rankMonths = {};
+            index = 0;
+            ranks.forEach(el => {
+              // console.log(el.player);
+              rankMonths[`${el.month} ${el.year}`] ? null : rankMonths[`${el.month} ${el.year}`] = ``;
+              for (let n = 0; n < 3; n++) {
+                switch (n) {
+                  case 0:
+                    rankMonths[`${el.month} ${el.year}`] += `${el.rank}: `;
+                    break;
+                  case 1:
+                    rankMonths[`${el.month} ${el.year}`] += `${el.player}, `;
+                    break;
+                  case 2:
+                    rankMonths[`${el.month} ${el.year}`] += `${el.score.toLocaleString('en-us')}\n`;
+                    // rankFields.push({ name: '\u200B', value: '\u200B', inline: false });
+                    break;
+                  default:
+                    break;
+                }
+              }
+              
+
+              // redo this to add each run to the end of a string denoted by the month of the year, then display each one according to the month
+              // e.g. the object would look like
+              // {
+              //   'March': `1: Suzaku, 106739204\n2: Darkari, 101294582 ...etc`
+              // }
+            });
+            console.log(rankMonths);
+            let rankMonthsList = Object.keys(rankMonths);
+            const exampleEmbed = new Discord.MessageEmbed()
+              .setColor('#0099ff')
+              // .setTitle(args[0])
+              .addFields({ name: rankMonthsList[index], value: rankMonths[rankMonthsList[index]], inline: true})
+              .setTimestamp()
+              .setFooter('Use the buttons to scroll the results');
+
+            const backId = 'back'
+            const forwardId = 'forward'
+            const backButton = new MessageButton({
+              style: 'SECONDARY',
+              label: 'Newer',
+              emoji: '⬅️',
+              customId: backId
+            })
+            const forwardButton = new MessageButton({
+              style: 'SECONDARY',
+              label: 'Older',
+              emoji: '➡️',
+              customId: forwardId
+            })
+
+            const msg = await message.channel.send({
+              embeds: [exampleEmbed],
+              components: ranks.length <= 30
+                ? []
+                : [new MessageActionRow({ components: [forwardButton] })]
+            })
+
+            if (ranks.length === 0) return
+
+            // Collect button interactions (when a user clicks a button),
+            // but only when the button as clicked by the original message author
+            const collector = msg.createMessageComponentCollector({
+              filter: ({ user }) => true
+            })
+
+            let currentIndex = index
+            collector.on('collect', async interaction => {
+              // Increase/decrease index
+              interaction.customId === backId ? (currentIndex -= 1) : (currentIndex += 1)
+              // Respond to interaction by updating message with new embed
+              await interaction.update({
+                embeds: [new Discord.MessageEmbed()
+                  .setColor('#0099ff')
+                  // .setTitle(args[0])
+                  .addFields({ name: rankMonthsList[currentIndex], value: rankMonths[rankMonthsList[currentIndex]], inline: true})
+                  .setTimestamp()
+                  .setFooter('Use the buttons to scroll the results')],
+                components: [
+                  new MessageActionRow({
+                    components: [
+                      // back button if it isn't the start
+                      ...(currentIndex ? [backButton] : []),
+                      // forward button if it isn't the end
+                      ...(currentIndex + 1 < rankMonthsList.length ? [forwardButton] : [])
+                    ]
+                  })
+                ]
+              })
+            })
+          } catch (e) {
+            console.log('error at 226:', e);
+          }
+          break;
+        case 2:
+          // find only specific cb, assuming that they have typed a corret year and or part of a month name
+          try {
+            // find ranks within a certain year after checking that the year is in a number format
+            let month = args[0];
+            let year = parseInt(args[1]);
+            if (isNaN(year))
+              throw 'insert a proper number';
+            let ranks = await models.Rank.findAll({ where: { month: { [Op.iLike]: `%${month}%` }, year: year } , order: [ ['createdAt', 'desc'], ['rank', 'asc'] ] });
+            // console.log(ranks.length);
+            let rankList = '';
+            // index = 0;
+            let title = '';
+            // console.log(ranks);
+            ranks.forEach(el => {
+              // console.log(el.player);
+              title = `${el.month} ${el.year}`;
+              // rank? null : rankMonths[`${el.month} ${el.year}`] = ``;
+              for (let n = 0; n < 3; n++) {
+                switch (n) {
+                  case 0:
+                    rankList += `${el.rank}: `;
+                    break;
+                  case 1:
+                    rankList += `${el.player}, `;
+                    break;
+                  case 2:
+                    rankList += `${el.score.toLocaleString('en-us')}\n`;
+                    // rankFields.push({ name: '\u200B', value: '\u200B', inline: false });
+                    break;
+                  default:
+                    break;
+                }
+              }
+              
+
+              // redo this to add each run to the end of a string denoted by the month of the year, then display each one according to the month
+              // e.g. the object would look like
+              // {
+              //   'March': `1: Suzaku, 106739204\n2: Darkari, 101294582 ...etc`
+              // }
+            });
+            const exampleEmbed = new Discord.MessageEmbed()
+              .setColor('#0099ff')
+              // .setTitle(args[0])
+              .addFields({ name: title, value: rankList, inline: true})
+              .setTimestamp()
+              // .setFooter('Use the buttons to scroll the results');
+
+            const msg = await message.channel.send({
+              embeds: [exampleEmbed]
+            })
+          } catch (e) {
+            console.log('error at 226:', e);
+          }
+          // console.log(args);
+          break;
+      }
+    }
     // if (command === 'runs') {
     //   // REWORK THIS TO HAVE NO ARGUMENTS FOR CURRENT DAY RUNS AND A MONTH YEAR TO GET SPECIFIC CB RUNS (Op.iLike %month% AND Op.includes? year)
 
@@ -311,7 +477,7 @@ client.on('messageCreate', async (message) => {
     // then make it so that it will list all teams used against a specific boss and cycle through them
 
     if (command === 'help') {
-      message.channel.send('Commands are: \n\n Find rank of one player ```!rank <playerName>``` \n Find rank of player in year ```!rank <playerName> <year>``` \n Find rank of player in specific cb ```!rank <playerName> <month> <year>```');
+      message.channel.send('Commands are: \n\n Find rank of one player ```!rank <playerName>``` \n Find rank of player in year ```!rank <playerName> <year>``` \n Find rank of player in specific cb ```!rank <playerName> <month> <year>```\n\n Find ranks from one year ```!ranks <year_num>``` \n\n Find ranks from one CB ```!ranks <month> <year_num>```');
     }
   }
 })
