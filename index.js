@@ -66,7 +66,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
 
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
-  if (message.channelId === process.env.CHANNEL_1 || message.channelId === process.env.CHANNEL_2) {
+  if (message.channelId === process.env.CHANNEL_1 || message.channelId === process.env.CHANNEL_2 || message.channelId === process.env.CHANNEL_4) {
     if (message.content.indexOf(process.env.PREFIX) !== 0) return;
     const args = message.content.slice(process.env.PREFIX.length).trim().split(/ +/g);
     const command = args.shift().toLowerCase();
